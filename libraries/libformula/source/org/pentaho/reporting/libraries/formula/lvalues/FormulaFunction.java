@@ -28,6 +28,7 @@ import org.pentaho.reporting.libraries.formula.function.FunctionRegistry;
 import org.pentaho.reporting.libraries.formula.function.ParameterCallback;
 import org.pentaho.reporting.libraries.formula.typing.Type;
 import org.pentaho.reporting.libraries.formula.typing.TypeRegistry;
+import org.pentaho.reporting.libraries.formula.typing.coretypes.AnyType;
 
 /**
  * A function. Formulas consist of functions, references or static values, which are connected by operators.
@@ -63,10 +64,20 @@ public class FormulaFunction extends AbstractLValue
       final Type paramType = function.metaData.getParameterType(pos);
       if (parameter != null)
       {
-        final TypeValuePair result = parameter.evaluate();
-        if (result.getValue() == null)
+        final TypeValuePair result;
+        try 
         {
-          return result;
+          result = parameter.evaluate();
+          if (result.getValue() == null)
+          {
+            return result;
+          }
+        } catch (EvaluationException e) {
+          if (e.getErrorValue() == LibFormulaErrorValue.ERROR_NA_VALUE)
+          {
+            return new TypeValuePair(AnyType.TYPE, null);
+          }
+          throw e;
         }
 
         // lets do some type checking, right?
